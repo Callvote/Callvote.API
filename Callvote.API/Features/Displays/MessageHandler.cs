@@ -1,12 +1,13 @@
 ﻿#if !BAREBONES
 using Callvote.API.Features.Displays.DefaultProviders;
+using UnityEngine;
 #endif
 using System;
 using System.Collections.Generic;
 using Callvote.API.Enums;
+using Callvote.API.Features.Extensions;
 using Callvote.API.Features.Generic;
 using Callvote.API.Features.Votes;
-using UnityEngine;
 
 namespace Callvote.API.Features.Displays
 {
@@ -87,7 +88,7 @@ namespace Callvote.API.Features.Displays
         /// <remarks>
         /// I don't really know how I got to those values but they should make everything still be visible when there's too many characters in the message.
         /// </remarks>
-        /// <returns>An number for the size tag.</returns>
+        /// <returns>A number for the size tag.</returns>
         public static int CalculateMessageSize(string message)
         {
             int defaultSize = 52;
@@ -100,21 +101,17 @@ namespace Callvote.API.Features.Displays
             }
 
             defaultSize -= sizeReduction;
-
-            return Mathf.Clamp(defaultSize, 30, 52);
+            return defaultSize.Clamp(30, 52);
         }
 
         private static DisplayProvider GetDisplayProvider()
         {
-            string gameName = Application.productName;
-
 #if !BAREBONES
             if (Application.productName == "SCPSL")
             {
                 return new BroadcastProvider();
             }
 #endif
-
             return null;
         }
     }

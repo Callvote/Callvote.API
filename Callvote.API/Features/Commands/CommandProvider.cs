@@ -1,6 +1,4 @@
-﻿using Callvote.API.Delegates;
-using Callvote.API.Enums;
-using Callvote.API.Features.Votes;
+﻿using Callvote.API.Enums;
 using Callvote.API.Interfaces;
 
 namespace Callvote.API.Features.Commands

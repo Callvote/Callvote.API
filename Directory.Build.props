@@ -12,7 +12,7 @@
 		<DebugType>embedded</DebugType>
 		<Optimize>true</Optimize>
 		<Authors>Unbistrackted</Authors>
-		<Configurations>Debug;Release</Configurations>
+		<Configurations>Debug;Release;BareBones</Configurations>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
@@ -21,10 +21,6 @@
     </Target>
 
     <ItemGroup>
-        <Reference Include="UnityEngine" HintPath="$(SL_REFERENCES)\UnityEngine.dll" />
-        <Reference Include="UnityEngine.CoreModule" HintPath="$(SL_REFERENCES)\UnityEngine.CoreModule.dll" />
-        <Reference Include="UnityEngine.PhysicsModule" HintPath="$(SL_REFERENCES)\UnityEngine.PhysicsModule.dll" />
-
         <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556">
 		    <PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -37,9 +33,11 @@
         <Reference Include="Assembly-CSharp-Publicized" HintPath="$(SL_REFERENCES)\Assembly-CSharp-Publicized.dll" />
         <Reference Include="Assembly-CSharp-firstpass" HintPath="$(SL_REFERENCES)\Assembly-CSharp-firstpass.dll" />
         <Reference Include="Mirror" HintPath="$(SL_REFERENCES)\Mirror.dll" />
+        <Reference Include="UnityEngine" HintPath="$(SL_REFERENCES)\UnityEngine.dll" />
+        <Reference Include="UnityEngine.CoreModule" HintPath="$(SL_REFERENCES)\UnityEngine.CoreModule.dll" />
+        <Reference Include="UnityEngine.PhysicsModule" HintPath="$(SL_REFERENCES)\UnityEngine.PhysicsModule.dll" />
 
         <PackageReference Include="Northwood.LabAPI" Version="1.1.7" />
-        <PackageReference Include="Lib.Harmony" Version="2.3.6" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'EXILED'">

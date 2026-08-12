@@ -1,3 +1,8 @@
 <Solution>
-  <Project Path="Callvote.API/Callvote.API.csproj" />
+    <Configurations>
+        <BuildType Name="BareBones" />
+        <BuildType Name="Debug" />
+        <BuildType Name="Release" />
+    </Configurations>
+    <Project Path="Callvote.API/Callvote.API.csproj" />
 </Solution>

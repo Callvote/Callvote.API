@@ -1,10 +1,10 @@
 ﻿#if !BAREBONES
 using Callvote.API.Features.Commands.DefaultProviders;
+using UnityEngine;
 #endif
 using System.Collections.Generic;
 using Callvote.API.Enums;
 using Callvote.API.Features.Generic;
-using UnityEngine;
 
 namespace Callvote.API.Features.Commands
 {
@@ -53,9 +53,9 @@ namespace Callvote.API.Features.Commands
 
         private static CommandProvider GetCommandProvider()
         {
+#if !BAREBONES
             string gameName = Application.productName;
 
-#if !BAREBONES
             if (Application.productName == "SCPSL")
             {
                 return new SecretLabCommandProvider();

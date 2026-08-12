@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Callvote.API.Enums;
-using Utils.NonAllocLINQ;
 
 namespace Callvote.API.Features.Votes
 {
@@ -127,7 +126,9 @@ namespace Callvote.API.Features.Votes
                 return;
             }
 
-            if (!ActiveParallelVotes.TryGetFirst(v => v.VoteId == voteId, out Vote vote))
+            Vote vote = ActiveParallelVotes.FirstOrDefault(v => v.VoteId == voteId);
+
+            if (vote == null)
             {
                 return;
             }

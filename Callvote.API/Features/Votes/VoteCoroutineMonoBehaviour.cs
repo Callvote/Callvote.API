@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿#if !BAREBONES
+using UnityEngine;
 
 namespace Callvote.API.Features.Votes
 {
@@ -32,3 +33,4 @@ namespace Callvote.API.Features.Votes
         }
     }
 }
+#endif

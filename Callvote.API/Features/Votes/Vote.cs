@@ -1,4 +1,7 @@
-﻿using System;
+﻿#if !BAREBONES
+using UnityEngine;
+#endif
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,7 +14,6 @@ using Callvote.API.Features.Commands;
 using Callvote.API.Features.Displays;
 using Callvote.API.Features.Pooling;
 using Callvote.API.Interfaces;
-using UnityEngine;
 
 namespace Callvote.API.Features.Votes
 {
@@ -21,8 +23,10 @@ namespace Callvote.API.Features.Votes
     /// </summary>
     public class Vote
     {
+#if !BAREBONES
         private GameObject coroutineGameObject;
         private VoteCoroutineMonoBehaviour coroutine;
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Vote"/> class.
@@ -320,7 +324,7 @@ namespace Callvote.API.Features.Votes
                 return 0;
             }
 
-            return Mathf.Min((int)(count / (float)this.AllowedPlayers.Count * 100f), 100);
+            return Math.Min((int)(count / (float)this.AllowedPlayers.Count * 100f), 100);
         }
 
         /// <summary>

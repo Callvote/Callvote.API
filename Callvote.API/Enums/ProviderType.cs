@@ -12,5 +12,8 @@ namespace Callvote.API.Enums
 
         /// <summary>A<see cref="IProvider"/> that handles the commands.</summary>
         Command,
+
+        /// <summary>A<see cref="IProvider"/> that handles coroutines. </summary>
+        Coroutine,
     }
 }
