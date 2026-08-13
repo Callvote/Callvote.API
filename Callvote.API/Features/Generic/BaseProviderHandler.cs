@@ -96,6 +96,11 @@ namespace Callvote.API.Features.Generic
 
             if (!ReferenceEquals(p, provider))
             {
+                return false;
+            }
+
+            if (ReferenceEquals(this.CurrentProvider, provider))
+            {
                 this.CurrentProvider = default;
             }
 

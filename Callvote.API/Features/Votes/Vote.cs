@@ -125,7 +125,7 @@ namespace Callvote.API.Features.Votes
         /// <summary>
         /// Gets or sets the <see cref="Vote"/> message letter size.
         /// </summary>
-        /// <remarks>If the size is 0, it will use Callvote's message sizing method - <see cref="MessageHandler.CalculateMessageSize(string)"/>.</remarks>
+        /// <remarks>If the size is 0, it will use Callvote's message sizing method - <see cref="MessageHandler.CalculateMessageSize(string, Vote)"/>.</remarks>
         public int MessageSize { get; set; } = 0;
 
         /// <summary>
@@ -362,7 +362,7 @@ namespace Callvote.API.Features.Votes
         /// <returns>A tuple representing if it was successful and the response.</returns>
         public virtual (bool Sucess, string Response)? VoteCommandResponse(UserIdentifier player, VoteOption voteOption)
         {
-            if (!VoteHandler.IsVoteActive)
+            if (!this.IsCoroutineActive)
             {
                 return (false, "There is no vote in progress.");
             }
@@ -471,21 +471,10 @@ namespace Callvote.API.Features.Votes
         /// <summary>
         /// Starts the <see cref="Vote"/> by registering the commands and starting the coroutine.
         /// </summary>
-        /// <returns>Returns the <see cref="CallVoteStatus"/>.</returns>
-        internal CallVoteStatus StartVote()
+        internal void StartVote()
         {
-            CallingVoteEventArgs e = new(this);
-            EventsHandlers.OnCallingVote(e);
-            if (!e.IsAllowed)
-            {
-                return e.Status;
-            }
-
             this.RegisterAllVoteOptions();
             this.StartVoteCoroutine();
-
-            e.Status = CallVoteStatus.VoteStarted;
-            return e.Status;
         }
 
         /// <summary>
@@ -494,13 +483,6 @@ namespace Callvote.API.Features.Votes
         /// <param name="isForced">If the voting displays the results message or invokes the Callback.</param>
         internal void FinishVote(bool isForced = false)
         {
-            VoteEndingEventArgs e = new(this);
-            EventsHandlers.OnVoteEnding(e);
-            if (!e.IsAllowed)
-            {
-                return;
-            }
-
             this.UnregisterVoteOptionsCommand();
             this.StopVoteCoroutine();
 
@@ -511,17 +493,12 @@ namespace Callvote.API.Features.Votes
 
             if (this.Callback == null)
             {
-                MessageHandler.Show(this.ResultsMessageDuration, this.BuildResultsMessage(), this.AllowedPlayers);
+                MessageHandler.Show(this.ResultsMessageDuration, this.BuildResultsMessage(), this.AllowedPlayers, vote: this);
             }
             else
             {
                 this.Callback?.Invoke(this);
             }
-
-            // Prevents being null when it's later used in the event
-            Vote vote = this;
-            VoteEndedEventArgs ev = new(vote);
-            EventsHandlers.OnVoteEnded(ev);
         }
 
         /// <summary>
@@ -532,18 +509,18 @@ namespace Callvote.API.Features.Votes
         internal IEnumerator VoteCoroutine()
         {
             float timerCounter = 0f;
-            MessageHandler.Show(this.InitialMessageDuration, this.BuildQuestionMessage(), this.AllowedPlayers);
+            MessageHandler.Show(this.InitialMessageDuration, this.BuildQuestionMessage(), this.AllowedPlayers, vote: this);
             yield return new WaitForSeconds(this.InitialMessageDuration);
 
             while (true)
             {
                 if (timerCounter >= this.Duration)
                 {
-                    VoteHandler.FinishVote();
+                    VoteHandler.FinishVote(this);
                     yield break;
                 }
 
-                MessageHandler.Show(this.RefreshInterval, this.BuildCounterWithQuestionMessage(), this.AllowedPlayers);
+                MessageHandler.Show(this.RefreshInterval, this.BuildCounterWithQuestionMessage(), this.AllowedPlayers, vote: this);
                 timerCounter += this.RefreshInterval;
                 yield return new WaitForSeconds(this.RefreshInterval);
             }
@@ -554,6 +531,7 @@ namespace Callvote.API.Features.Votes
             foreach (VoteOption voteOption in this.VoteOptions)
             {
                 CommandHandler.RegisterCommand(voteOption.VoteCommand);
+                voteOption.VoteCommand.Vote = this;
                 this.RegisteredCommands[voteOption.VoteCommand.Command] = voteOption.VoteCommand;
             }
         }
@@ -563,6 +541,7 @@ namespace Callvote.API.Features.Votes
             foreach (KeyValuePair<string, VoteCommand> commandKvp in this.RegisteredCommands)
             {
                 CommandHandler.UnregisterCommand(commandKvp.Value);
+                commandKvp.Value.Vote = null;
             }
         }
 

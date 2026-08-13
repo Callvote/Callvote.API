@@ -32,6 +32,6 @@ namespace Callvote.API.Events.EventArgs
         /// <summary>
         /// Gets or sets the <see cref="CallVoteStatus"/> returned to the caller when <see cref="IsAllowed"/> is false.
         /// </summary>
-        public CallVoteStatus Status { get; set; } = CallVoteStatus.VoteCanceled;
+        public CallVoteStatus Status { get; set; }
     }
 }

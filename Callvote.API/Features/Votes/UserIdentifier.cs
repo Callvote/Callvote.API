@@ -46,7 +46,7 @@ namespace Callvote.API.Features.Votes
 #endif
 
         /// <inheritdoc/>
-        public override int GetHashCode() => this.UniqueUserId.GetHashCode();
+        public override int GetHashCode() => this.UniqueUserId?.GetHashCode() ?? 0;
 
         /// <inheritdoc/>
         public virtual bool Equals(UserIdentifier other) => other is not null && string.Equals(this.UniqueUserId, other.UniqueUserId, StringComparison.Ordinal);

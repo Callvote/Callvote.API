@@ -39,7 +39,7 @@ namespace Callvote.API.Features.Commands
         /// <param name="command">The <see cref="VoteCommand"/> to register.</param>
         public static void RegisterCommand(VoteCommand command)
         {
-            Instance.CurrentProvider.RegisterCommand(command);
+            Instance.CurrentProvider?.RegisterCommand(command);
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Callvote.API.Features.Commands
         /// <param name="command">The <see cref="VoteCommand"/> to unregister.</param>
         public static void UnregisterCommand(VoteCommand command)
         {
-            Instance.CurrentProvider.UnregisterCommand(command);
+            Instance.CurrentProvider?.UnregisterCommand(command);
         }
 
         private static CommandProvider GetCommandProvider()

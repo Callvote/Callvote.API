@@ -27,6 +27,12 @@ namespace Callvote.API.Features.Commands.DefaultCommands
         {
             ReferenceHub player = sender is ServerConsoleSender ? Server.Host?.ReferenceHub : Player.Get(sender)?.ReferenceHub;
 
+            if (player == null)
+            {
+                response = "Unable to identify the command sender!";
+                return false;
+            }
+
             return this.command.OnCommandExecuted(player, out response);
         }
     }

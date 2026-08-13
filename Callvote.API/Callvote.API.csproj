@@ -29,8 +29,8 @@
 	<ItemGroup>
 		<Compile Remove="*.yml" />
 		<None Include="..\Callvote.png" Pack="true" PackagePath="" />
-		<None Include="..\License.md" Pack="true" PackagePath="" />
-		<None Include="..\NugetREADME.md" Pack="true" PackagePath="" />
+		<None Include="..\LicenseNUGET.md" Pack="true" PackagePath="" />
+		<None Include="..\ReadmeNUGET.md" Pack="true" PackagePath="" />
 	</ItemGroup>
 
 </Project>

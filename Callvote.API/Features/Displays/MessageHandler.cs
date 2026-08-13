@@ -43,7 +43,8 @@ namespace Callvote.API.Features.Displays
         /// <param name="message">The message to be displayed.</param>
         /// <param name="user">The player that will see the message.</param>
         /// <param name="position">The position of the message.</param>
-        public static void Show(float duration, string message, UserIdentifier user, float? position = null)
+        /// <param name="vote">The <see cref="Vote"/> the message belongs to. Defaults to the <see cref="VoteHandler.CurrentVote"/> when null.</param>
+        public static void Show(float duration, string message, UserIdentifier user, float? position = null, Vote vote = null)
         {
             if (string.IsNullOrEmpty(message))
             {
@@ -52,7 +53,7 @@ namespace Callvote.API.Features.Displays
 
             Instance.CurrentProvider?.Show(
                 TimeSpan.FromSeconds(Math.Max(0, duration)),
-                $"<size={CalculateMessageSize(message)}>{message}</size>",
+                $"<size={CalculateMessageSize(message, vote)}>{message}</size>",
                 user,
                 position);
         }
@@ -64,7 +65,8 @@ namespace Callvote.API.Features.Displays
         /// <param name="message">The message to be displayed.</param>
         /// <param name="users">The players that will see the message.</param>
         /// <param name="position">The position of the message.</param>
-        public static void Show(float duration, string message, IEnumerable<UserIdentifier> users, float? position = null)
+        /// <param name="vote">The <see cref="Vote"/> the message belongs to. Defaults to the <see cref="VoteHandler.CurrentVote"/> when null.</param>
+        public static void Show(float duration, string message, IEnumerable<UserIdentifier> users, float? position = null, Vote vote = null)
         {
             if (string.IsNullOrEmpty(message))
             {
@@ -75,7 +77,7 @@ namespace Callvote.API.Features.Displays
             {
                 Instance.CurrentProvider?.Show(
                     TimeSpan.FromSeconds(Math.Max(0, duration)),
-                    $"<size={CalculateMessageSize(message)}>{message}</size>",
+                    $"<size={CalculateMessageSize(message, vote)}>{message}</size>",
                     user,
                     position);
             }
@@ -85,18 +87,21 @@ namespace Callvote.API.Features.Displays
         /// Calculates the size tag for the message based on its length and Callvote's configuration.
         /// </summary>
         /// <param name="message">The message to have it's size calculated.</param>
+        /// <param name="vote">The <see cref="Vote"/> whose <see cref="Vote.MessageSize"/> is used. Defaults to the <see cref="VoteHandler.CurrentVote"/> when null.</param>
         /// <remarks>
         /// This values only work for SL.
         /// </remarks>
         /// <returns>A number for the size tag.</returns>
-        public static int CalculateMessageSize(string message)
+        public static int CalculateMessageSize(string message, Vote vote = null)
         {
             int defaultSize = 52;
             int sizeReduction = message.Length / 4;
 
-            if (VoteHandler.CurrentVote.MessageSize != 0)
+            vote ??= VoteHandler.CurrentVote;
+
+            if (vote != null && vote.MessageSize != 0)
             {
-                defaultSize = VoteHandler.CurrentVote.MessageSize;
+                defaultSize = vote.MessageSize;
                 return defaultSize;
             }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Callvote.API.Enums;
 using Callvote.API.Events;
@@ -26,20 +27,20 @@ namespace Callvote.API.Features.Votes
                 return;
             }
 
-            LabApi.Events.Handlers.ServerEvents.RoundRestarted += () => FinishVote(true);
-            LabApi.Events.Handlers.ServerEvents.WaitingForPlayers += () => FinishVote(true);
+            LabApi.Events.Handlers.ServerEvents.RoundRestarted += () => FinishActiveVote(true);
+            LabApi.Events.Handlers.ServerEvents.WaitingForPlayers += () => FinishActiveVote(true);
         }
 #endif
 
         /// <summary>
         /// Gets the list of active parallel <see cref="Vote"/>s. These votes are ran in parallel with the main <see cref="CurrentVote"/> and are not affected by it.
         /// </summary>
-        public static IReadOnlyCollection<Vote> ActiveParallelVotes => activeParallelVotes;
+        public static IReadOnlyCollection<Vote> ActiveParallelVotes => new ReadOnlyCollection<Vote>([.. activeParallelVotes]);
 
         /// <summary>
         /// Gets the currently active <see cref="Vote"/> instance. Null when no vote is in progress.
         /// </summary>
-        public static Vote CurrentVote { get; internal set; }
+        public static Vote CurrentVote { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether the <see cref="Vote"/> is currently active.
@@ -65,17 +66,24 @@ namespace Callvote.API.Features.Votes
                 throw new ArgumentNullException(nameof(vote), "Vote cannot be null!");
             }
 
-            CallVoteStatus status;
+            CallingVoteEventArgs e = new(vote);
+            EventsHandlers.OnCallingVote(e);
 
-            if (isParallel)
+            CallVoteStatus status = CallVoteStatus.VoteStarted;
+
+            if (!e.IsAllowed)
+            {
+                status = e.Status;
+            }
+            else if (isParallel)
             {
                 activeParallelVotes.Add(vote);
-                status = CurrentVote.StartVote();
+                vote.StartVote();
             }
             else if (!IsVoteActive)
             {
                 CurrentVote = vote;
-                status = CurrentVote.StartVote();
+                CurrentVote.StartVote();
             }
             else
             {
@@ -89,41 +97,65 @@ namespace Callvote.API.Features.Votes
         }
 
         /// <summary>
-        /// Finishes and clears the active <see cref="Vote"/>.
+        /// Finishes a <see cref="Vote"/>.
         /// Stops the vote, displays results (or invokes a callback when provided).
         /// </summary>
+        /// <param name="vote">The vote that will be stopped.</param>
         /// <param name="isForced">If the voting will display the results message or invoke the Callback.</param>
-        public static void FinishVote(bool isForced = false)
+        /// <returns>If the vote was finished.</returns>
+        /// <remarks>
+        /// Denying <see cref="EventsHandlers.VoteEnding"/> only suppresses the results message and the Callback, the <see cref="Vote"/> is still stopped.
+        /// </remarks>
+        public static bool FinishVote(Vote vote, bool isForced = false)
         {
-            if (!IsVoteActive)
+            if (vote == null)
             {
-                return;
+                return false;
             }
 
-            CurrentVote?.FinishVote(isForced);
+            VoteEndingEventArgs e = new(vote);
+            EventsHandlers.OnVoteEnding(e);
 
-            CurrentVote = null;
+            vote.FinishVote(isForced && e.IsAllowed);
+
+            VoteEndedEventArgs ev = new(vote);
+            EventsHandlers.OnVoteEnded(ev);
+
+            if (CurrentVote == vote)
+            {
+                CurrentVote = null;
+            }
+
+            return true;
         }
+
+        /// <summary>
+        /// Finishes and clears the active <see cref="Vote"/>.
+        /// </summary>
+        /// <param name="isForced">If the voting will display the results message or invoke the Callback.</param>
+        /// <returns>If the vote was finished.</returns>
+        public static bool FinishActiveVote(bool isForced = false) => FinishVote(CurrentVote, isForced);
 
         /// <summary>
         /// Stops a parallel <see cref="Vote"/>. If the <paramref name="vote"/> is not active or is not in the <see cref="activeParallelVotes"/> list, the method does nothing.
         /// </summary>
         /// <param name="vote">The <see cref="Vote"/> to be stopped.</param>
         /// <param name="isForced">If it's forced.</param>
-        public static void StopParallelVote(Vote vote, bool isForced = false)
+        /// <returns>If the vote was finished.</returns>
+        public static bool FinishParallelVote(Vote vote, bool isForced = false)
         {
-            if (vote == null)
+            if (vote == null || CurrentVote == vote || (!activeParallelVotes.Contains(vote) && !vote.IsCoroutineActive))
             {
-                return;
+                return false;
             }
 
-            if (!activeParallelVotes.Contains(vote) && !vote.IsCoroutineActive)
+            if (!FinishVote(vote, isForced))
             {
-                return;
+                return false;
             }
 
-            CurrentVote?.FinishVote(isForced);
             activeParallelVotes.Remove(vote);
+            return true;
         }
 
         /// <summary>
@@ -131,21 +163,17 @@ namespace Callvote.API.Features.Votes
         /// </summary>
         /// <param name="voteId">The <see cref="Vote.VoteId"/> to stop the <see cref="Vote"/>.</param>
         /// <param name="isForced">If it's forced.</param>
-        public static void StopParallelVote(long voteId, bool isForced = false)
+        /// <returns>If the vote was finished.</returns>
+        public static bool FinishParallelVote(long voteId, bool isForced = false)
         {
-            if (voteId == 0)
-            {
-                return;
-            }
-
             Vote vote = activeParallelVotes.FirstOrDefault(v => v.VoteId == voteId);
 
             if (vote == null)
             {
-                return;
+                return false;
             }
 
-            StopParallelVote(vote, isForced);
+            return FinishParallelVote(vote, isForced);
         }
 
         /// <summary>
@@ -153,34 +181,16 @@ namespace Callvote.API.Features.Votes
         /// </summary>
         /// <param name="user">The identifier of the user whose parallel votes are to be stopped. Cannot be null.</param>
         /// <param name="isForced">If it's forced.</param>
-        public static void StopParallelVotes(UserIdentifier user, bool isForced = false)
+        public static void FinishParallelVotes(UserIdentifier user, bool isForced = false)
         {
             if (user == null)
             {
                 return;
             }
 
-            foreach (Vote vote in activeParallelVotes.Where(v => v.CallVotePlayer == user))
+            foreach (Vote vote in activeParallelVotes.Where(v => v.CallVotePlayer == user).ToArray())
             {
-                StopParallelVote(vote, isForced);
-            }
-        }
-
-        /// <summary>
-        /// Stops a collection of parallel <see cref="Vote"/>s.
-        /// </summary>
-        /// <param name="votes">The collection of parallel <see cref="Vote"/>s.</param>
-        /// <param name="isForced">If it's forced.</param>
-        public static void StopParallelVotes(IEnumerable<Vote> votes, bool isForced = false)
-        {
-            if (votes == null)
-            {
-                return;
-            }
-
-            foreach (Vote vote in votes)
-            {
-                StopParallelVote(vote, isForced);
+                FinishParallelVote(vote, isForced);
             }
         }
 
@@ -188,14 +198,12 @@ namespace Callvote.API.Features.Votes
         /// Stops all active parallel votes and clears the list of active votes.
         /// </summary>
         /// <param name="isForced">If it's forced.</param>
-        public static void StopAllParallelVotes(bool isForced = false)
+        public static void FinishAllParallelVotes(bool isForced = false)
         {
-            foreach (Vote vote in activeParallelVotes)
+            foreach (Vote vote in activeParallelVotes.ToArray())
             {
-                StopParallelVote(vote, isForced);
+                FinishParallelVote(vote, isForced);
             }
-
-            activeParallelVotes.Clear();
         }
 
         /// <summary>

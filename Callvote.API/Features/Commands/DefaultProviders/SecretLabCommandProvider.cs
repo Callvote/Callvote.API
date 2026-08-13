@@ -14,7 +14,9 @@ namespace Callvote.API.Features.Commands.DefaultProviders
 
         public override void RegisterCommand(VoteCommand command)
         {
-            if (this.IsCommandRegistered(command))
+            command.Command = command.VoteOption.Option;
+
+            while (this.IsCommandRegistered(command))
             {
                 command.Command = "cv" + command.Command;
             }

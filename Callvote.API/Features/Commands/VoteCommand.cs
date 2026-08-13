@@ -41,6 +41,11 @@ namespace Callvote.API.Features.Commands
         public VoteOption VoteOption { get; }
 
         /// <summary>
+        /// Gets the <see cref="Votes.Vote"/> this <see cref="VoteCommand"/> is currently registered for. Null when it is not registered.
+        /// </summary>
+        public Vote Vote { get; internal set; }
+
+        /// <summary>
         /// Executes a command using the specified arguments and provides a response message indicating the result.
         /// </summary>
         /// <param name="user">The user that supplies context and state information for the command execution. Can be null.</param>
@@ -48,13 +53,13 @@ namespace Callvote.API.Features.Commands
         /// <returns>true if the command was executed successfully; otherwise, false.</returns>
         public virtual bool OnCommandExecuted(UserIdentifier user, out string response)
         {
-            if (VoteHandler.CurrentVote == null)
+            if (this.Vote == null)
             {
                 response = "There is no active vote!";
                 return false;
             }
 
-            ResponseHandler handler = this.responseHandler ?? VoteHandler.CurrentVote.VoteCommandResponse;
+            ResponseHandler handler = this.responseHandler ?? this.Vote.VoteCommandResponse;
 
             (bool, string)? results = handler?.Invoke(user, this.VoteOption);
 

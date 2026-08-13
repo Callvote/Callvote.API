@@ -40,6 +40,9 @@ namespace Callvote.API.Events
         /// <summary>
         /// Invoked before a vote ends.
         /// </summary>
+        /// <remarks>
+        /// Denying this only suppresses the results message and the <see cref="Features.Votes.Vote.Callback"/>, the vote is still stopped.
+        /// </remarks>
         public static event CustomEventHandler<VoteEndingEventArgs> VoteEnding;
 
         /// <summary>
