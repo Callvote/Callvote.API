@@ -20,8 +20,8 @@
 		<RepositoryUrl>https://github.com/Callvote/Callvote.API</RepositoryUrl>
 		<PackageProjectUrl>https://callvote.me/</PackageProjectUrl>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageLicenseFile>License.md</PackageLicenseFile>
-		<PackageReadmeFile>NugetREADME.md</PackageReadmeFile>
+		<PackageLicenseFile>LicenseNUGET.md</PackageLicenseFile>
+		<PackageReadmeFile>ReadmeNUGET.md</PackageReadmeFile>
 		<PackageIcon>Callvote.png</PackageIcon>
 		<PackageTags>LabAPI,EXILED,Callvote,SCPSL,Unity</PackageTags>
 	</PropertyGroup>
