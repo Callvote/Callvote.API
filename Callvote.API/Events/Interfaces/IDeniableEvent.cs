@@ -3,7 +3,7 @@
     /// <summary>
     /// Event args used for deniable events.
     /// </summary>
-    internal interface IDeniableEvent
+    public interface IDeniableEvent
     {
         /// <summary>
         /// Gets or sets a value indicating whether the event was allowed or not.

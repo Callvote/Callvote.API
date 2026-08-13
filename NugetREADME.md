@@ -52,7 +52,7 @@ private void ReviveSCPs(DiedEventArgs ev)
 
 ## Documentation
 
-> https://unbistrackted.github.io/Callvote/
+> https://callvote.me/
 
 ## Special thanks to:
 

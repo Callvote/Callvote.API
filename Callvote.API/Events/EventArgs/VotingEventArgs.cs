@@ -4,9 +4,9 @@ using Callvote.API.Features.Votes;
 namespace Callvote.API.Events.EventArgs
 {
     /// <summary>
-    /// Contains all information about a <see cref="UserIndentifier"/> that is voting on a <see cref="Vote"/> with a specific <see cref="VoteOption"/>.
+    /// Contains all information about a <see cref="UserIdentifier"/> that is voting on a <see cref="Vote"/> with a specific <see cref="VoteOption"/>.
     /// </summary>
-    public class VotingEventArgs : System.EventArgs, IUserIndentifierEvent, IVoteEvent, IVoteOptionEvent, IDeniableEvent
+    public class VotingEventArgs : System.EventArgs, IUserIdentifierEvent, IVoteEvent, IVoteOptionEvent, IDeniableEvent
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="VotingEventArgs"/> class.
@@ -22,7 +22,7 @@ namespace Callvote.API.Events.EventArgs
         }
 
         /// <inheritdoc />
-        public UserIndentifier User => this.Vote.CallVotePlayer;
+        public UserIdentifier User => this.Vote.CallVotePlayer;
 
         /// <inheritdoc />
         public Vote Vote { get; }

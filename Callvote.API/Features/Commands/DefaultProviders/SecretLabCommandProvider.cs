@@ -12,11 +12,6 @@ namespace Callvote.API.Features.Commands.DefaultProviders
     {
         public override string Name => "SecretLabCommandProvider";
 
-        public override bool IsCommandRegistered(VoteCommand command)
-        {
-            return QueryProcessor.DotCommandHandler.TryGetCommand(command.Command, out _);
-        }
-
         public override void RegisterCommand(VoteCommand command)
         {
             if (this.IsCommandRegistered(command))
@@ -36,6 +31,8 @@ namespace Callvote.API.Features.Commands.DefaultProviders
 
             QueryProcessor.DotCommandHandler.UnregisterCommand(cmd);
         }
+
+        public override bool IsCommandRegistered(VoteCommand command) => QueryProcessor.DotCommandHandler.TryGetCommand(command.Command, out _);
     }
 }
 

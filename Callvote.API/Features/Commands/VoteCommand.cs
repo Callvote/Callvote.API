@@ -1,5 +1,6 @@
 ﻿using Callvote.API.Delegates;
 using Callvote.API.Features.Votes;
+using JetBrains.Annotations;
 
 namespace Callvote.API.Features.Commands
 {
@@ -8,6 +9,7 @@ namespace Callvote.API.Features.Commands
     /// </summary>
     public class VoteCommand
     {
+        [CanBeNull]
         private readonly ResponseHandler responseHandler;
 
         /// <summary>
@@ -44,7 +46,7 @@ namespace Callvote.API.Features.Commands
         /// <param name="user">The user that supplies context and state information for the command execution. Can be null.</param>
         /// <param name="response">When this method returns, contains the response message generated during command execution.</param>
         /// <returns>true if the command was executed successfully; otherwise, false.</returns>
-        public virtual bool OnCommandExecuted(UserIndentifier user, out string response)
+        public virtual bool OnCommandExecuted(UserIdentifier user, out string response)
         {
             if (VoteHandler.CurrentVote == null)
             {
@@ -52,7 +54,7 @@ namespace Callvote.API.Features.Commands
                 return false;
             }
 
-            var handler = this.responseHandler ?? VoteHandler.CurrentVote.VoteCommandResponse;
+            ResponseHandler handler = this.responseHandler ?? VoteHandler.CurrentVote.VoteCommandResponse;
 
             (bool, string)? results = handler?.Invoke(user, this.VoteOption);
 

@@ -12,13 +12,13 @@ namespace Callvote.API.Features.Votes
 
         private void OnDestroy()
         {
-            if (this.VoteCoroutine == default || this.Vote == null)
+            if (this.VoteCoroutine == null || this.Vote == null)
             {
                 return;
             }
 
             this.StopCoroutine(this.VoteCoroutine);
-            this.VoteCoroutine = default;
+            this.VoteCoroutine = null;
             this.Vote = null;
         }
 

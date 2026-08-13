@@ -48,12 +48,7 @@ namespace Callvote.API.Features.Generic
         /// <returns>If the <see cref="CurrentProvider"/> was changed.</returns>
         public virtual bool SelectProvider(string providerName)
         {
-            if (!this.TryGetProvider(providerName, out T provider))
-            {
-                return false;
-            }
-
-            return this.SelectProvider(provider);
+            return this.TryGetProvider(providerName, out T provider) && this.SelectProvider(provider);
         }
 
         /// <summary>
@@ -84,12 +79,7 @@ namespace Callvote.API.Features.Generic
         /// <returns>If the provider was removed from <see cref="Providers"/>.</returns>
         public virtual bool RemoveProvider(string providerName)
         {
-            if (!this.TryGetProvider(providerName, out T provider))
-            {
-                return false;
-            }
-
-            return this.RemoveProvider(provider);
+            return this.TryGetProvider(providerName, out T provider) && this.RemoveProvider(provider);
         }
 
         /// <summary>

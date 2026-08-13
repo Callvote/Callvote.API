@@ -61,7 +61,6 @@ namespace Callvote.API.Features.Commands
                 return new SecretLabCommandProvider();
             }
 #endif
-
             return null;
         }
     }

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Callvote.API.Enums;
+using Callvote.API.Events;
+using Callvote.API.Events.EventArgs;
 
 namespace Callvote.API.Features.Votes
 {
@@ -11,21 +13,28 @@ namespace Callvote.API.Features.Votes
     /// </summary>
     public static class VoteHandler
     {
+        /// <summary>
+        /// Gets the lists of active parallel <see cref="Vote"/>s. These votes are ran in parallel with the main <see cref="CurrentVote"/> and are not affected by it.
+        /// </summary>
+        private static HashSet<Vote> activeParallelVotes = [];
+
 #if !BAREBONES
         static VoteHandler()
         {
-            if (UnityEngine.Application.productName == "SCPSL")
+            if (UnityEngine.Application.productName != "SCPSL")
             {
-                LabApi.Events.Handlers.ServerEvents.RoundRestarted += () => FinishVote(true);
-                LabApi.Events.Handlers.ServerEvents.WaitingForPlayers += () => FinishVote(true);
+                return;
             }
+
+            LabApi.Events.Handlers.ServerEvents.RoundRestarted += () => FinishVote(true);
+            LabApi.Events.Handlers.ServerEvents.WaitingForPlayers += () => FinishVote(true);
         }
 #endif
 
         /// <summary>
         /// Gets the list of active parallel <see cref="Vote"/>s. These votes are ran in parallel with the main <see cref="CurrentVote"/> and are not affected by it.
         /// </summary>
-        public static IReadOnlyCollection<Vote> ReadOnlyActiveParallelVotes => ActiveParallelVotes;
+        public static IReadOnlyCollection<Vote> ActiveParallelVotes => activeParallelVotes;
 
         /// <summary>
         /// Gets the currently active <see cref="Vote"/> instance. Null when no vote is in progress.
@@ -43,17 +52,12 @@ namespace Callvote.API.Features.Votes
         public static bool ShouldSendWebhookMessage { get; set; } = false;
 
         /// <summary>
-        /// Gets the lists of active parallel <see cref="Vote"/>s. These votes are ran in parallel with the main <see cref="CurrentVote"/> and are not affected by it.
-        /// </summary>
-        internal static HashSet<Vote> ActiveParallelVotes { get; } = new HashSet<Vote>();
-
-        /// <summary>
         /// Request to start a <see cref="Vote"/>.
         /// If queueing is enabled the <paramref name="vote"/> will be enqueued and the <see cref="Vote"/> is started immediately.
         /// </summary>
         /// <param name="vote">The <see cref="Vote"/> to start or enqueue.</param>
-        /// <param name="isParallel">If the vote will be ran in parallel.</param>
-        /// <returns>A <see cref="CallVoteStatus"/> representing if the action was sucessfull, or for example, if the queue is full.</returns>
+        /// <param name="isParallel">If the vote will be run in parallel.</param>
+        /// <returns>A <see cref="CallVoteStatus"/> representing if the action was successful, or for example, if the queue is full.</returns>
         public static CallVoteStatus CallVote(Vote vote, bool isParallel = false)
         {
             if (vote == null)
@@ -61,19 +65,27 @@ namespace Callvote.API.Features.Votes
                 throw new ArgumentNullException(nameof(vote), "Vote cannot be null!");
             }
 
+            CallVoteStatus status;
+
             if (isParallel)
             {
-                ActiveParallelVotes.Add(vote);
-                return CurrentVote.StartVote();
+                activeParallelVotes.Add(vote);
+                status = CurrentVote.StartVote();
             }
-
-            if (!IsVoteActive)
+            else if (!IsVoteActive)
             {
                 CurrentVote = vote;
-                return CurrentVote.StartVote();
+                status = CurrentVote.StartVote();
+            }
+            else
+            {
+                status = CallVoteStatus.VoteInProgress;
             }
 
-            return CallVoteStatus.VoteInProgress;
+            VoteCalledEventArgs ev = new(vote, status);
+            EventsHandlers.OnCalledVote(ev);
+
+            return status;
         }
 
         /// <summary>
@@ -94,7 +106,7 @@ namespace Callvote.API.Features.Votes
         }
 
         /// <summary>
-        /// Stops a parallel <see cref="Vote"/>. If the <paramref name="vote"/> is not active or is not in the <see cref="ActiveParallelVotes"/> list, the method does nothing.
+        /// Stops a parallel <see cref="Vote"/>. If the <paramref name="vote"/> is not active or is not in the <see cref="activeParallelVotes"/> list, the method does nothing.
         /// </summary>
         /// <param name="vote">The <see cref="Vote"/> to be stopped.</param>
         /// <param name="isForced">If it's forced.</param>
@@ -105,17 +117,17 @@ namespace Callvote.API.Features.Votes
                 return;
             }
 
-            if (!ActiveParallelVotes.Contains(vote) && !vote.IsCoroutineActive)
+            if (!activeParallelVotes.Contains(vote) && !vote.IsCoroutineActive)
             {
                 return;
             }
 
             CurrentVote?.FinishVote(isForced);
-            ActiveParallelVotes.Remove(vote);
+            activeParallelVotes.Remove(vote);
         }
 
         /// <summary>
-        /// Stops a parallel <see cref="Vote"/> by its ID. If the <paramref name="voteId"/> is not active or is not in the <see cref="ActiveParallelVotes"/> list, the method does nothing.
+        /// Stops a parallel <see cref="Vote"/> by its ID. If the <paramref name="voteId"/> is not active or is not in the <see cref="activeParallelVotes"/> list, the method does nothing.
         /// </summary>
         /// <param name="voteId">The <see cref="Vote.VoteId"/> to stop the <see cref="Vote"/>.</param>
         /// <param name="isForced">If it's forced.</param>
@@ -126,7 +138,7 @@ namespace Callvote.API.Features.Votes
                 return;
             }
 
-            Vote vote = ActiveParallelVotes.FirstOrDefault(v => v.VoteId == voteId);
+            Vote vote = activeParallelVotes.FirstOrDefault(v => v.VoteId == voteId);
 
             if (vote == null)
             {
@@ -141,14 +153,14 @@ namespace Callvote.API.Features.Votes
         /// </summary>
         /// <param name="user">The identifier of the user whose parallel votes are to be stopped. Cannot be null.</param>
         /// <param name="isForced">If it's forced.</param>
-        public static void StopParallelVotes(UserIndentifier user, bool isForced = false)
+        public static void StopParallelVotes(UserIdentifier user, bool isForced = false)
         {
             if (user == null)
             {
                 return;
             }
 
-            foreach (Vote vote in ActiveParallelVotes.Where(v => v.CallVotePlayer == user))
+            foreach (Vote vote in activeParallelVotes.Where(v => v.CallVotePlayer == user))
             {
                 StopParallelVote(vote, isForced);
             }
@@ -178,12 +190,12 @@ namespace Callvote.API.Features.Votes
         /// <param name="isForced">If it's forced.</param>
         public static void StopAllParallelVotes(bool isForced = false)
         {
-            foreach (Vote vote in ActiveParallelVotes)
+            foreach (Vote vote in activeParallelVotes)
             {
                 StopParallelVote(vote, isForced);
             }
 
-            ActiveParallelVotes.Clear();
+            activeParallelVotes.Clear();
         }
 
         /// <summary>

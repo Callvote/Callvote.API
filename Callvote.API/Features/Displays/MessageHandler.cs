@@ -21,7 +21,7 @@ namespace Callvote.API.Features.Displays
         /// <summary>
         /// Gets the current instance of the Display system.
         /// </summary>
-        public static MessageHandler Instance { get; private set; } = new MessageHandler();
+        public static MessageHandler Instance { get; } = new MessageHandler();
 
         /// <inheritdoc/>
         public override Dictionary<string, DisplayProvider> Providers { get; } = [];
@@ -43,7 +43,7 @@ namespace Callvote.API.Features.Displays
         /// <param name="message">The message to be displayed.</param>
         /// <param name="user">The player that will see the message.</param>
         /// <param name="position">The position of the message.</param>
-        public static void Show(float duration, string message, UserIndentifier user, float? position = null)
+        public static void Show(float duration, string message, UserIdentifier user, float? position = null)
         {
             if (string.IsNullOrEmpty(message))
             {
@@ -64,14 +64,14 @@ namespace Callvote.API.Features.Displays
         /// <param name="message">The message to be displayed.</param>
         /// <param name="users">The players that will see the message.</param>
         /// <param name="position">The position of the message.</param>
-        public static void Show(float duration, string message, IEnumerable<UserIndentifier> users, float? position = null)
+        public static void Show(float duration, string message, IEnumerable<UserIdentifier> users, float? position = null)
         {
             if (string.IsNullOrEmpty(message))
             {
                 return;
             }
 
-            foreach (UserIndentifier user in users)
+            foreach (UserIdentifier user in users)
             {
                 Instance.CurrentProvider?.Show(
                     TimeSpan.FromSeconds(Math.Max(0, duration)),
@@ -86,7 +86,7 @@ namespace Callvote.API.Features.Displays
         /// </summary>
         /// <param name="message">The message to have it's size calculated.</param>
         /// <remarks>
-        /// I don't really know how I got to those values but they should make everything still be visible when there's too many characters in the message.
+        /// This values only work for SL.
         /// </remarks>
         /// <returns>A number for the size tag.</returns>
         public static int CalculateMessageSize(string message)

@@ -22,13 +22,7 @@ public static class MathExtension
         {
             return min;
         }
-        else if (val.CompareTo(max) > 0)
-        {
-            return max;
-        }
-        else
-        {
-            return val;
-        }
+
+        return val.CompareTo(max) > 0 ? max : val;
     }
 }

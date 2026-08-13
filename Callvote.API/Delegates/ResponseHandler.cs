@@ -9,5 +9,5 @@ namespace Callvote.API.Delegates
     /// <param name="user">The user who sent the command.</param>
     /// <param name="voteOption">The option that the player voted.</param>
     /// <returns>A tuple representing if it was sucessful and the response.</returns>
-    public delegate (bool Sucess, string Response)? ResponseHandler(UserIndentifier user, VoteOption voteOption);
+    public delegate (bool Sucess, string Response)? ResponseHandler(UserIdentifier user, VoteOption voteOption);
 }

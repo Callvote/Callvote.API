@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<Title>Callvote.API</Title>
 		<Description>Callvote system like in the Source engine for SCP:SL.</Description>
-		<Version>1.0.0</Version>
+		<Version>1.0.2</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -17,8 +17,8 @@
 		<Product>Callvote.API</Product>
 		<Copyright>BSD 3-Clause License</Copyright>
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-		<RepositoryUrl>https://github.com/Unbistrackted/Callvote</RepositoryUrl>
-		<PackageProjectUrl>https://unbistrackted.github.io/Callvote/</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Callvote/Callvote.API</RepositoryUrl>
+		<PackageProjectUrl>https://callvote.me/</PackageProjectUrl>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageLicenseFile>License.md</PackageLicenseFile>
 		<PackageReadmeFile>NugetREADME.md</PackageReadmeFile>

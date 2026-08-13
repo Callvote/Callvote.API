@@ -1,15 +1,15 @@
-﻿using Callvote.API.Features.Votes;
+using Callvote.API.Enums;
 
 namespace Callvote.API.Events.Interfaces
 {
     /// <summary>
     /// Event args used for all <see cref="Features.Votes.Vote"/> related events.
     /// </summary>
-    public interface IVoteEvent
+    public interface IVoteStatusEvent
     {
         /// <summary>
-        /// Gets the <see cref="Features.Votes.Vote"/> related to the event.
+        /// Gets the <see cref="Enums.CallVoteStatus"/> related to the event.
         /// </summary>
-        public Vote Vote { get; }
+        public CallVoteStatus Status { get; }
     }
 }

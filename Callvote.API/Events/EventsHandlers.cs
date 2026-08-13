@@ -10,8 +10,11 @@ namespace Callvote.API.Events
     public static class EventsHandlers
     {
         /// <summary>
-        /// Invoked after calling a vote.
+        /// Invoked after calling a vote, whether it started.
         /// </summary>
+        /// <remarks>
+        /// Check <see cref="VoteCalledEventArgs.Status"/> before assuming there is a running vote.
+        /// </remarks>
         public static event CustomEventHandler<VoteCalledEventArgs> CalledVote;
 
         /// <summary>
@@ -90,13 +93,7 @@ namespace Callvote.API.Events
                     continue;
                 }
 
-                try
-                {
-                    customDelegate(args);
-                }
-                catch (Exception)
-                {
-                }
+                customDelegate(args);
             }
         }
     }

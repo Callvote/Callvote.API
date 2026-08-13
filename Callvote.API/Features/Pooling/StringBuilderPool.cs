@@ -11,26 +11,10 @@ namespace Callvote.API.Features.Pooling
         /// <summary>
         /// Initializes a new instance of the <see cref="StringBuilderPool"/> class.
         /// </summary>
-        /// <param name="preload">The ammount of <see cref="StringBuilder"/> to be pre-alocated.</param>
+        /// <param name="preload">The amount of <see cref="StringBuilder"/> to be pre-alocated.</param>
         public StringBuilderPool(int preload = 0)
-            : base(() => new StringBuilder(512), preload)
+            : base(static () => new StringBuilder(512), preload)
         {
-        }
-
-        /// <inheritdoc/>
-        public override StringBuilder Fetch()
-        {
-            return base.Fetch();
-        }
-
-        /// <summary>
-        /// Clears and store a <see cref="StringBuilder"/>.
-        /// </summary>
-        /// <param name="item">The <see cref="StringBuilder"/> to be stored.</param>
-        public override void Store(StringBuilder item)
-        {
-            item.Clear();
-            base.Store(item);
         }
 
         /// <summary>
@@ -43,6 +27,16 @@ namespace Callvote.API.Features.Pooling
             string text = item.ToString();
             this.Store(item);
             return text;
+        }
+
+        /// <summary>
+        /// Clears and store a <see cref="StringBuilder"/>.
+        /// </summary>
+        /// <param name="item">The <see cref="StringBuilder"/> to be stored.</param>
+        protected override void Store(StringBuilder item)
+        {
+            item.Clear();
+            base.Store(item);
         }
     }
 }

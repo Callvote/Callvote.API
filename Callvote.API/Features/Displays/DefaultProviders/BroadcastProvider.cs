@@ -1,7 +1,6 @@
 ﻿#if !BAREBONES
 
 using System;
-using System.Collections.Generic;
 using Callvote.API.Features.Votes;
 using LabApi.Features.Wrappers;
 
@@ -16,7 +15,7 @@ namespace Callvote.API.Features.Displays.DefaultProviders
         public override string Name => "Callvote.API.Broadcast";
 
         /// <inheritdoc/>
-        public override void Show(TimeSpan duration, string content, UserIndentifier player, float? position = null)
+        public override void Show(TimeSpan duration, string content, UserIdentifier player, float? position = null)
         {
             Player p = Player.Get(player.UserId);
 

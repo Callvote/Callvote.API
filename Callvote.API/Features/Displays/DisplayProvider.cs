@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Callvote.API.Enums;
 using Callvote.API.Features.Votes;
 using Callvote.API.Interfaces;
@@ -24,6 +23,6 @@ namespace Callvote.API.Features.Displays
         /// <param name="content">The message that is going to be displayed.</param>
         /// <param name="player">The players the message will be displayed to.</param>
         /// <param name="position">The position of the message.</param>
-        public abstract void Show(TimeSpan duration, string content, UserIndentifier player, float? position = null);
+        public abstract void Show(TimeSpan duration, string content, UserIdentifier player, float? position = null);
     }
 }
