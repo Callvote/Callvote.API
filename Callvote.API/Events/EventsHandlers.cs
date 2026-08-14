@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Callvote.API.Delegates;
 using Callvote.API.Events.EventArgs;
 
@@ -25,12 +26,12 @@ namespace Callvote.API.Events
         /// <summary>
         /// Invoked after a player votes.
         /// </summary>
-        public static event CustomEventHandler<VotedEventArgs> Voted;
+        public static event CustomEventHandler<UserVotedEventArgs> UserVoted;
 
         /// <summary>
         /// Invoked before a player votes.
         /// </summary>
-        public static event CustomEventHandler<VotingEventArgs> Voting;
+        public static event CustomEventHandler<UserVotingEventArgs> UserVoting;
 
         /// <summary>
         /// Invoked after a vote ends.
@@ -60,14 +61,14 @@ namespace Callvote.API.Events
         /// <summary>
         /// Called after a player votes.
         /// </summary>
-        /// <param name="ev">The <see cref="VotingEventArgs"/> instance.</param>
-        public static void OnVoted(VotedEventArgs ev) => Voted?.InvokeEvent(ev);
+        /// <param name="ev">The <see cref="UserVotingEventArgs"/> instance.</param>
+        public static void OnVoted(UserVotedEventArgs ev) => UserVoted?.InvokeEvent(ev);
 
         /// <summary>
         /// Called before a player votes.
         /// </summary>
-        /// <param name="ev">The <see cref="VotingEventArgs"/> instance.</param>
-        public static void OnVoting(VotingEventArgs ev) => Voting?.InvokeEvent(ev);
+        /// <param name="ev">The <see cref="UserVotingEventArgs"/> instance.</param>
+        public static void OnVoting(UserVotingEventArgs ev) => UserVoting?.InvokeEvent(ev);
 
         /// <summary>
         /// Called after a vote ends.
@@ -96,7 +97,14 @@ namespace Callvote.API.Events
                     continue;
                 }
 
-                customDelegate(args);
+                try
+                {
+                    customDelegate(args);
+                }
+                catch (Exception exception)
+                {
+                    Trace.TraceError(exception.ToString());
+                }
             }
         }
     }

@@ -15,7 +15,7 @@ namespace Callvote.API.Features.Votes
     public static class VoteHandler
     {
         /// <summary>
-        /// Gets the lists of active parallel <see cref="Vote"/>s. These votes are ran in parallel with the main <see cref="CurrentVote"/> and are not affected by it.
+        /// Gets the lists of active parallel <see cref="Vote"/>s. These votes are ran in parallel with the main <see cref="ActiveVote"/> and are not affected by it.
         /// </summary>
         private static HashSet<Vote> activeParallelVotes = [];
 
@@ -27,25 +27,33 @@ namespace Callvote.API.Features.Votes
                 return;
             }
 
-            LabApi.Events.Handlers.ServerEvents.RoundRestarted += () => FinishActiveVote(true);
-            LabApi.Events.Handlers.ServerEvents.WaitingForPlayers += () => FinishActiveVote(true);
+            LabApi.Events.Handlers.ServerEvents.RoundRestarted += () =>
+            {
+                FinishActiveVote(true);
+                FinishAllParallelVotes(true);
+            };
+            LabApi.Events.Handlers.ServerEvents.WaitingForPlayers += () =>
+            {
+                FinishActiveVote(true);
+                FinishAllParallelVotes(true);
+            };
         }
 #endif
 
         /// <summary>
-        /// Gets the list of active parallel <see cref="Vote"/>s. These votes are ran in parallel with the main <see cref="CurrentVote"/> and are not affected by it.
+        /// Gets the list of active parallel <see cref="Vote"/>s. These votes are ran in parallel with the main <see cref="ActiveVote"/> and are not affected by it.
         /// </summary>
         public static IReadOnlyCollection<Vote> ActiveParallelVotes => new ReadOnlyCollection<Vote>([.. activeParallelVotes]);
 
         /// <summary>
         /// Gets the currently active <see cref="Vote"/> instance. Null when no vote is in progress.
         /// </summary>
-        public static Vote CurrentVote { get; private set; }
+        public static Vote ActiveVote { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether the <see cref="Vote"/> is currently active.
         /// </summary>
-        public static bool IsVoteActive => CurrentVote != null;
+        public static bool IsVoteActive => ActiveVote != null;
 
         /// <summary>
         /// Gets or sets a value indicating whether the Discord Webhook will be able to send a webhook message.
@@ -82,8 +90,8 @@ namespace Callvote.API.Features.Votes
             }
             else if (!IsVoteActive)
             {
-                CurrentVote = vote;
-                CurrentVote.StartVote();
+                ActiveVote = vote;
+                ActiveVote.StartVote();
             }
             else
             {
@@ -116,15 +124,17 @@ namespace Callvote.API.Features.Votes
             VoteEndingEventArgs e = new(vote);
             EventsHandlers.OnVoteEnding(e);
 
-            vote.FinishVote(isForced && e.IsAllowed);
+            vote.FinishVote(isForced || !e.IsAllowed);
 
             VoteEndedEventArgs ev = new(vote);
             EventsHandlers.OnVoteEnded(ev);
 
-            if (CurrentVote == vote)
+            if (ActiveVote == vote)
             {
-                CurrentVote = null;
+                ActiveVote = null;
             }
+
+            activeParallelVotes.Remove(vote);
 
             return true;
         }
@@ -134,7 +144,7 @@ namespace Callvote.API.Features.Votes
         /// </summary>
         /// <param name="isForced">If the voting will display the results message or invoke the Callback.</param>
         /// <returns>If the vote was finished.</returns>
-        public static bool FinishActiveVote(bool isForced = false) => FinishVote(CurrentVote, isForced);
+        public static bool FinishActiveVote(bool isForced = false) => FinishVote(ActiveVote, isForced);
 
         /// <summary>
         /// Stops a parallel <see cref="Vote"/>. If the <paramref name="vote"/> is not active or is not in the <see cref="activeParallelVotes"/> list, the method does nothing.
@@ -144,7 +154,7 @@ namespace Callvote.API.Features.Votes
         /// <returns>If the vote was finished.</returns>
         public static bool FinishParallelVote(Vote vote, bool isForced = false)
         {
-            if (vote == null || CurrentVote == vote || (!activeParallelVotes.Contains(vote) && !vote.IsCoroutineActive))
+            if (vote == null || ActiveVote == vote || (!activeParallelVotes.Contains(vote) && !vote.IsCoroutineActive))
             {
                 return false;
             }

@@ -6,29 +6,31 @@ namespace Callvote.API.Events.EventArgs
     /// <summary>
     /// Contains all information about a <see cref="UserIdentifier"/> that is voting on a <see cref="Vote"/> with a specific <see cref="VoteOption"/>.
     /// </summary>
-    public class VotingEventArgs : System.EventArgs, IUserIdentifierEvent, IVoteEvent, IVoteOptionEvent, IDeniableEvent
+    public class UserVotingEventArgs : System.EventArgs, IUserIdentifierEvent, IVoteEvent, IVoteOptionEvent, IDeniableEvent
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="VotingEventArgs"/> class.
+        /// Initializes a new instance of the <see cref="UserVotingEventArgs"/> class.
         /// </summary>
+        /// <param name="user">The <inheritdoc cref="UserIdentifier"/> that voted.</param>
         /// <param name="voteOption"><inheritdoc cref="VoteOption"/></param>
         /// <param name="isAllowed"><inheritdoc cref="IsAllowed"/></param>
         /// <param name="vote"><inheritdoc cref="Vote"/></param>
-        public VotingEventArgs(Vote vote, VoteOption voteOption, bool isAllowed = true)
+        public UserVotingEventArgs(UserIdentifier user, Vote vote, VoteOption voteOption, bool isAllowed = true)
         {
+            this.User = user;
             this.Vote = vote;
             this.VoteOption = voteOption;
             this.IsAllowed = isAllowed;
         }
 
         /// <inheritdoc />
-        public UserIdentifier User => this.Vote.CallVotePlayer;
+        public UserIdentifier User { get; }
 
         /// <inheritdoc />
         public Vote Vote { get; }
 
         /// <inheritdoc />
-        public VoteOption VoteOption { get; }
+        public VoteOption VoteOption { get; set; }
 
         /// <inheritdoc />
         public bool IsAllowed { get; set; }

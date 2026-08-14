@@ -24,6 +24,8 @@ namespace Callvote.API.Features.Votes
     /// </summary>
     public class Vote
     {
+        private readonly object voteSync = new();
+
 #if !BAREBONES
         private GameObject coroutineGameObject;
         private VoteCoroutineMonoBehaviour coroutine;
@@ -155,20 +157,18 @@ namespace Callvote.API.Features.Votes
 
         /// <summary>
         /// Gets the Dictionary of Players with their <see cref="VoteOption"/> in the <see cref="Vote"/> .
-        /// Key: Player. Value: <see cref="VoteOption"/>.
         /// </summary>
-        public ConcurrentDictionary<UserIdentifier, HashSet<VoteOption>> PlayerVote { get; } = new();
+        public ConcurrentDictionary<UserIdentifier, ConcurrentDictionary<VoteOption, int>> PlayerVote { get; } = new();
 
         /// <summary>
-        /// Gets the amount of votes of a <see cref="VoteOption"/> in a <see cref="Vote"/>.s
-        /// Key: <see cref="VoteOption"/>. Value: amount of votes.
+        /// Gets the amount of votes of a <see cref="VoteOption"/> in a <see cref="Vote"/>.
         /// </summary>
         public ConcurrentDictionary<VoteOption, int> Counter { get; } = new();
 
         /// <summary>
         /// Gets a value indicating whether the <see cref="Vote"/> coroutine is active.
         /// </summary>
-        public bool IsCoroutineActive => this.coroutine != null;
+        public bool IsCoroutineActive => this.coroutine;
 
         /// <summary>
         /// Makes a <see cref="UserIdentifier"/> vote on a <see cref="VoteOption"/> of a <see cref="Vote"/>.
@@ -186,57 +186,49 @@ namespace Callvote.API.Features.Votes
                 return false;
             }
 
-            VotingEventArgs e = new(this, voteOption);
+            UserVotingEventArgs e = new(user, this, voteOption);
             EventsHandlers.OnVoting(e);
+
             if (!e.IsAllowed)
             {
                 return false;
             }
 
-            // So I wanted to make this comment cause AddOrUpdate is so fucking cool and useful like bro DUGYHADHUJBGAHGYDAHDA, props to it
-            this.PlayerVote.AddOrUpdate(
-                user,
-                (_) =>
+            lock (this.voteSync)
+            {
+                // vote might be finished
+                if (!this.IsCoroutineActive || !this.AllowedPlayers.Contains(user) || !this.IsVoteOptionPresent(voteOption))
                 {
-                    this.Counter.AddOrUpdate(voteOption, 1, (_, amount) => amount + 1);
-                    return [voteOption];
-                },
-                (_, votes) =>
+                    return false;
+                }
+
+                ConcurrentDictionary<VoteOption, int> playerVotes = this.PlayerVote.GetOrAdd(user, _ => new ConcurrentDictionary<VoteOption, int>());
+
+                if (this.IsMultipleVotesAllowed)
                 {
-                    // Need to lock cause hashset is not thread safe and I don't feel like using a concurrent dictionary with a random ass value
-                    lock (votes)
+                    playerVotes.AddOrUpdate(voteOption, 1, (_, count) => count + 1);
+                    this.Counter.AddOrUpdate(voteOption, 1, (_, count) => count + 1);
+                }
+                else
+                {
+                    if (playerVotes.Count == 1 && playerVotes.TryGetValue(voteOption, out int currentCount) && currentCount == 1)
                     {
-                        if (votes.Contains(voteOption))
-                        {
-                            if (this.IsMultipleVotesAllowed)
-                            {
-                                // Removes the votes if player already voted on the same option.
-                                this.Counter.AddOrUpdate(voteOption, 0, (_, amount) => Math.Max(0, amount - 1));
-                                votes.Remove(voteOption);
-                            }
-
-                            return votes;
-                        }
-
-                        if (!this.IsMultipleVotesAllowed)
-                        {
-                            // Since there's only one vote inside of the hashset when multiple votes are not allowed, the .first() is always getting the one that I want
-                            this.Counter.AddOrUpdate(votes.First(), 0, (_, amount) => Math.Max(0, amount - 1));
-                            votes.Remove(votes.First());
-                            this.Counter.AddOrUpdate(voteOption, 1, (_, amount) => amount + 1);
-                        }
-                        else
-                        {
-                            this.Counter.AddOrUpdate(voteOption, 1, (_, amount) => amount + 1);
-                        }
-
-                        votes.Add(voteOption);
-
-                        return votes;
+                        return false;
                     }
-                });
 
-            VotedEventArgs ev = new(this, voteOption);
+                    foreach (KeyValuePair<VoteOption, int> previousVote in playerVotes)
+                    {
+                        this.Counter.AddOrUpdate(previousVote.Key, 0, (_, total) => Math.Max(0, total - previousVote.Value));
+                    }
+
+                    playerVotes.Clear();
+                    playerVotes[voteOption] = 1;
+
+                    this.Counter.AddOrUpdate(voteOption, 1, (_, count) => count + 1);
+                }
+            }
+
+            UserVotedEventArgs ev = new(user, this, voteOption);
             EventsHandlers.OnVoted(ev);
             return true;
         }
@@ -251,17 +243,17 @@ namespace Callvote.API.Features.Votes
         /// <summary>
         /// Gets a value indicating whether the <see cref="UserIdentifier"/> has already voted on a specific <see cref="VoteOption"/> in a <see cref="Vote"/> .
         /// </summary>
-        /// <param name="user">The user that is going to checked if he voted on a option or not.</param>
+        /// <param name="user">The user that is going to be checked if he voted on an option or not.</param>
         /// <param name="voteOption">The vote option.</param>
         /// <returns>If the user voted in a vote option.</returns>
-        public bool HasPlayerVotedOnOption(UserIdentifier user, VoteOption voteOption) => this.PlayerVote.TryGetValue(user, out HashSet<VoteOption> votes) && votes.Contains(voteOption);
+        public bool HasPlayerVotedOnOption(UserIdentifier user, VoteOption voteOption) => this.PlayerVote.TryGetValue(user, out ConcurrentDictionary<VoteOption, int> votes) && votes.Keys.Contains(voteOption);
 
         /// <summary>
         /// Gets the <see cref="VoteOption"/>s that a <see cref="UserIdentifier"/> has voted on in a <see cref="Vote"/> .
         /// </summary>
         /// <param name="user">The user that is going to checked.</param>
         /// <returns>A collection of the voted options.</returns>
-        public HashSet<VoteOption> GetVoteFromPlayer(UserIdentifier user) => this.PlayerVote.TryGetValue(user, out HashSet<VoteOption> votes) ? votes : [];
+        public HashSet<VoteOption> GetVoteFromPlayer(UserIdentifier user) => this.PlayerVote.TryGetValue(user, out ConcurrentDictionary<VoteOption, int> votes) ? [.. votes.Keys] : [];
 
         /// <summary>
         /// Gets the <see cref="VoteOption"/> in a <see cref="Vote"/> .
@@ -270,6 +262,14 @@ namespace Callvote.API.Features.Votes
         /// <returns>A <see cref="HashSet{Vote}"/> .</returns>
         /// <remarks><see cref="VoteOption"/>s in <see cref="VoteOptions"/> can have the same <see cref="VoteOption.Option"/>, consider using <see cref="GetVoteOptionFromCommand"/> if you made sure the command is not already registed by another plugin.</remarks>
         public HashSet<VoteOption> GetVoteOptions(string option) => [.. this.VoteOptions.Where(vote => vote.Option == option)];
+
+        /// <summary>
+        /// Gets how many votes a user has on a VoteOption.
+        /// </summary>
+        /// <param name="user">The user to be checked.</param>
+        /// <param name="voteOption">The vote option to be checked.</param>
+        /// <returns>The amount of votes the player did.</returns>
+        public int GetVoteCountFromPlayer(UserIdentifier user, VoteOption voteOption) => this.PlayerVote.TryGetValue(user, out ConcurrentDictionary<VoteOption, int> playerVotes) && playerVotes.TryGetValue(voteOption, out int count) ? count : 0;
 
         /// <summary>
         /// Gets the <see cref="VoteOption"/> in a <see cref="Vote"/> .
@@ -322,7 +322,7 @@ namespace Callvote.API.Features.Votes
         /// <param name="option">The option that will be rigged.</param>
         /// <param name="vote">The <see cref="VoteOption"/> from the <see cref="Vote"/>.</param>
         /// <param name="amount">The amount of votes added to that option.</param>
-        /// <returns>If the vote rigging was sucessful or not.</returns>
+        /// <returns>If the vote rigging was successful or not.</returns>
         public bool Rig(string option, out VoteOption vote, int amount = 1)
         {
             vote = this.GetVoteOptionFromCommand(option);
@@ -486,7 +486,7 @@ namespace Callvote.API.Features.Votes
             this.UnregisterVoteOptionsCommand();
             this.StopVoteCoroutine();
 
-            if (!isForced)
+            if (isForced)
             {
                 return;
             }
@@ -564,7 +564,12 @@ namespace Callvote.API.Features.Votes
                 return;
             }
 
-            UnityEngine.Object.Destroy(this.coroutineGameObject);
+            GameObject gameObject = this.coroutineGameObject;
+
+            this.coroutine = null;
+            this.coroutineGameObject = null;
+
+            UnityEngine.Object.Destroy(gameObject);
         }
     }
 }

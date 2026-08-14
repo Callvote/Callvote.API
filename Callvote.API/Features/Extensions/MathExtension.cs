@@ -15,6 +15,7 @@ public static class MathExtension
     /// <param name="max">The maximum value to be compared to.</param>
     /// <typeparam name="T">An IComparable value.</typeparam>
     /// <returns>The clamped value.</returns>
+    /// <remarks>I added this cause I plan to make this a netstandard project and Math.Clamp doesn't exist there.</remarks>
     public static T Clamp<T>(this T val, T min, T max)
         where T : IComparable<T>
     {

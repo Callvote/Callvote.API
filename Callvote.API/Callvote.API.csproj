@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<Title>Callvote.API</Title>
 		<Description>Callvote system like in the Source engine for SCP:SL.</Description>
-		<Version>1.0.2</Version>
+		<Version>1.0.4</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
